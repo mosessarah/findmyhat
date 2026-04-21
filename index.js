@@ -66,10 +66,9 @@ class Field {
 
   // * setHat positions the hat along a random x and y position within field array
   setHat() {
-    const x = Math.floor(Math.random() * (ROWS - 1)) + 1;         // establish arandom position of X in the field
-    const y = Math.floor(Math.random() * (COLS - 1)) + 1;         // establish a random position of Y in the field
-    console.log(`Hat placed at (x: ${x}, y: ${y})`);
-    this.field[x][y] = HAT;                                   // set the HAT along the dwrived random position this.field[x][y]
+    const x = Math.floor(Math.random() * (ROWS - 1)) + 1;     // establish a random position of X in the field
+    const y = Math.floor(Math.random() * (COLS - 1)) + 1;     // establish a random postion of Y in the field
+    this.field[x][y] = HAT;                                   // set the HAT along the derived random position this.field[x][y]
   }
 
   // * printField displays the updated status of the field position
