@@ -1,27 +1,27 @@
 import promptSync from "prompt-sync";
 const prompt = promptSync({ sigint: true });
 
-// * Game elements/assets constants
-const HAT = '^';
-const HOLE = 'O';
-const GRASS = '░';
-const PLAYER = '*';
 
-// * UP / DOWN / LEFT / RIGHT / QUIT keyboard constants
+// * Game elements/assets constants
+const HAT = "^";
+const HOLE = "O";
+const GRASS = "░";
+const PLAYER = "*";
+
+// * UP / DOWN / LEFT / RIGHT / QUIT (DEFAULT) keyboard constants
 const UP = "W";
 const DOWN = "S";
 const LEFT = "A";
 const RIGHT = "D";
 const QUIT = "Q";
 
-
 // * MSG_UP / MSG_DOWN / MSG_LEFT / MSG_RIGHT / MSG_ QUIT / MSG_INVALID message constants
 const FEEDBACK_UP = "You moved up.";
-const FEEDBACK_DOWN = "You moved down";
-const FEEDBACK_LEFT = "You moved left";
-const FEEDBACK_RIGHT = "You moved right";
-const FEEDBACK_QUIT = "You have quit the game";
-const FEEDBACK_INVALID = "Invalid entry";
+const FEEDBACK_DOWN = "You moved down.";
+const FEEDBACK_LEFT = "You moved left.";
+const FEEDBACK_RIGHT = "You moved right.";
+const FEEDBACK_QUIT = "You have quit the game.";
+const FEEDBACK_INVALID = "Invalid entry.";
 
 // * WIN / LOSE / OUT / QUIT messages constants
 const FEEDBACK_WIN_MSG = "Congratulations, you won!";
@@ -30,27 +30,33 @@ const FEEDBACK_OUT_MSG = "You stepped out of the platform. Game Over";
 const FEEDBACK_QUIT_MSG = "You quit the game. Thank you for playing.";
 
 // * MAP ROWS, COLUMNS AND PERCENTAGE
-const ROWS = 8;
-const COLS = 5;
-const PERCENT = .2; //Percentage of the number of holes in the game map
-
+const ROWS = 10;
+const COLS = 10;
+const PERCENT = .2; // Percentage on the number of holes in the game map
 
 class Field {
+
+  score = 0;
+
   // * constructor, a built-in method of a class (invoked when an object of a class is instantiated)
+
   constructor(field = [[]]) {
     this.field = field;
     this.gamePlay = false;
+    this.playerPosition = { y: 0, x: 0 };
+    this.score = 0;
   }
+
   // * generateField is a static method, returning a 2D array of the fields
   static generateField(rows, cols, percentage) {
 
     const map = [[]];
 
     for (let i = 0; i < rows; i++) {
-      map[i] = [];                        // generate the row for the map
+      map[i] = [];                                            // generate the row for the map
 
       for (let j = 0; j < cols; j++) {
-        map[i][j] = Math.random() > PERCENT ? GRASS : HOLE;                // populate GRASS per column in each row ~ 80% Grass ~ 20% Hole
+        map[i][j] = Math.random() > PERCENT ? GRASS : HOLE;   // ~ 80% GRASS, ~ 20% HOLE
       }
 
     }
@@ -58,10 +64,10 @@ class Field {
     return map; // return the generated 2D array 
 
   }
-  // TODO: welcomeMessage is a static method, displays a string
+
+  // * welcomeMessage is a static method, displays a string
   static welcomeMsg(msg) {
     console.log(msg);
-
   }
 
   // * setHat positions the hat along a random x and y position within field array
@@ -73,44 +79,69 @@ class Field {
 
   // * printField displays the updated status of the field position
   printField() {
-
+    // Do you all remember the code we used to print the field without the [] and the ''
     this.field.forEach(row => console.log(row.join('')));
-
-
   }
 
-  // TODO: updateMove displays the move (key) entered by the user
+  // * updateMove displays the move (key) entered by the user
   updateMove(direction) {
     console.log(direction);
   }
-
   // !! TODO: updateGame Assessment Challenge
-  updateGame() {
+  updateGame(direction) {
+    // Clear old player position
+    this.field[this.playerPosition.y][this.playerPosition.x] = GRASS;
 
+    // Update coordinates based on direction
+    switch (direction) {
+      case FEEDBACK_UP: this.playerPosition.y--; break;
+      case FEEDBACK_DOWN: this.playerPosition.y++; break;
+      case FEEDBACK_LEFT: this.playerPosition.x--; break;
+      case FEEDBACK_RIGHT: this.playerPosition.x++; break;
+      default: return; // quit or invalid
+    }
 
-    // check the following conditions:
-    // 1. Whether the player fell into a HOLE, end the game
-    // 2. Whether the player moved out of the map, end the game 
+    const { y, x } = this.playerPosition;
+
+    // 1. Whether the player fell into HOLE, end the game
+    if (this.field[y] && this.field[y][x] === HOLE) {
+      console.log("\x1b[38;5;208m" + FEEDBACK_LOSE_MSG + "\x1b[0m");
+      this.#end();
+      return;
+    }
+
+    // 2. Whether the player moved out of the map, end the game
+    if (y < 0 || y >= ROWS || x < 0 || x >= COLS) {
+      console.log("\x1b[31m" + FEEDBACK_OUT_MSG + "\x1b[0m");
+      this.#end();
+      return;
+    }
+
     // 3. Whether the player moved to the HAT, wins the game
-    // 4. Whether player moved to a GRASS spot, update players's position and continue with the game
+    if (this.field[y][x] === HAT) {
+      console.log("\x1b[32m" + FEEDBACK_WIN_MSG + "\x1b[0m");
+      this.#end();
+      return;
+    }
 
-
+    // 4. Whether the player moved to a GRASS spot, update the players's position and continue with the game
+    this.field[y][x] = PLAYER;
+    this.score++;
+    console.log(`Moves taken: ${this.score}`);
   }
 
   // * start() a public method of the class to start the game
   start() {
     this.gamePlay = true;
 
-    this.field[0][0] = PLAYER;  //set the PLAYER position [0][0]
-    this.setHat();
+    this.field[0][0] = PLAYER;   // set the PLAYER position [0][0]
+    this.setHat();               // set the HAT position (randomly)
 
-    while (this.gamePlay) {    // while gamePlay is true, ask the user for an input (W), (A), (S), (D) or (Q)
+    while (this.gamePlay) {        // while gamePlay is true, ask the user for an input (W), (A), (S), (D) or (Q)
 
-      this.printField();// set the player's position the the start of the map;
-
-
-      const input = prompt("Enter (w)up, (s)down, (a)left, (d)right. Press (q) to quit:");
-      let flagInvalid = false; //use a flag to determine if the game is correct
+      this.printField();
+      const input = prompt("Enter (w)up, (s)down, (a)left, (d)right. Press (q) to quit: ");
+      let flagInvalid = false;   // use a flag to determine if the game entry is correct
       let feedback = "";
 
       switch (input.toUpperCase()) {
@@ -136,17 +167,19 @@ class Field {
           break;
       }
 
-      if (!flagInvalid) {  //flagInvalid is a boolean (if flagInvalid is NOT false (true))
-        // update the game
-        this.updateGame();
+      this.updateMove(feedback);
 
+      if (!flagInvalid) {  // flagInvalid is a boolean (if flagInvalid is NOT false (true))
+        // update the game
+        this.updateGame(feedback);
       }
+
     }
   }
-  // * a public method to end the game
+
+  //  * end() a private method to end the game
   #end() {
     this.gamePlay = false;
-
   }
 
 }
@@ -154,16 +187,14 @@ class Field {
 // * Generate a new field - using Field's static method: generateField
 const createField = Field.generateField(ROWS, COLS, PERCENT);
 
-
 // * Generate a welcome message
-Field.welcomeMsg("\n************WELCOME TO FIND YOUR HAT************\n");
+Field.welcomeMsg("\n************ WELCOME TO FIND YOUR HAT ************\n");
 
 // * Create a new instance of the game
-//* by passing createField as a parameter to the new instance of Field
+// * by passing createField as a parameter to the new instance of Field
 const gameField = new Field(createField);
 
-
-// TODO: Invoke method start(...) from the instance of game object
+// * Invoke method start(...) from the instance of game object
 gameField.start();
 
 //  ! method #end() cannot be accessed by the instance of Field - it is a private method
